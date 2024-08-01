@@ -1,10 +1,14 @@
 #![allow(unused)]
-use std::{collections::{HashMap, HashSet, VecDeque}, hash::Hash, rc::Rc};
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    hash::Hash,
+    rc::Rc,
+};
 
-
+#[derive(Debug)]
 pub struct Graph<T> {
-    // We have a set of nodes called Vertex set
-    // And each node can point to any other node in the vertex set
+    // We have a set of vertexs called Vertex set
+    // And each  can point to any other vertex in the vertex set
     // the pair (u, v) means from u to v there is an edge
     // We need to store key value pair
     // edges.get(1) = vec![2,3,4] it means there are 3 edges namely
@@ -14,48 +18,108 @@ pub struct Graph<T> {
 
 impl<T: Eq + PartialEq + Hash> Graph<T> {
     pub fn new() -> Graph<T> {
-        todo!();
+        Graph {
+            edges: HashMap::new(),
+        }
     }
 
     pub fn vertices(&self) -> Vec<Rc<T>> {
-        todo!();
+        let mut v = Vec::new();
+        for key in self.edges.keys() {
+            v.push(key.clone()); //need to clone to increment to reference
+        }
+        return v;
+        // self.edges.keys().into_iter().map(|x| x.clone()).collect()
     }
 
     pub fn insert_vertex(&mut self, u: T) {
-        todo!();
+        self.edges.insert(Rc::new(u), HashSet::new());
     }
 
     pub fn insert_edge(&mut self, u: T, v: T) {
-        // node u can already be in the HashMap or it is not in the HashMap
-        todo!();
+        // vertex u can already be in the HashMap or it is not in the HashMap
+        let u_ref = Rc::new(u);
+        let v_ref = Rc::new(v);
+        if self.edges.contains_key(&u_ref) {
+            let neighbors = self.edges.get_mut(&u_ref).unwrap();
+            neighbors.insert(v_ref);
+        } else {
+            let mut neighbors = HashSet::new();
+            neighbors.insert(v_ref);
+            self.edges.insert(u_ref, neighbors);
+        }
     }
 
     pub fn remove_edge(&mut self, u: &T, v: &T) {
-        todo!();
+        self.edges.get_mut(u).unwrap().remove(v);
     }
 
     pub fn remove_vertex(&mut self, u: &T) {
-        todo!();
+        self.edges.remove(u);
     }
 
     pub fn contains_vertex(&self, u: &T) -> bool {
-        todo!();
+        if self.edges.contains_key(u) {
+            true
+        } else {
+            for (__, neighbors) in self.edges.iter() {
+                if neighbors.contains(u) {
+                    return true;
+                }
+            }
+            false
+        }
     }
 
     pub fn contains_edge(&mut self, u: &T, v: &T) -> bool {
-        todo!();
+        if self.edges.contains_key(u) {
+            self.edges.get(u).unwrap().contains(v)
+        } else {
+            false
+        }
     }
 
     pub fn neighbors(&self, u: &T) -> Vec<Rc<T>> {
-        todo!();
+        let edges = self.edges.get(u).unwrap();
+        let mut v = Vec::new();
+        for edge in edges {
+            v.push(edge.clone())
+        }
+        v
+    }
+
+    pub fn number_of_vertices(&self) -> usize {
+        self.edges.len()
     }
 
     pub fn path_exists_between(&self, u: &T, v: &T) -> bool {
         // Use bfs or dfs
         // bfs requires a queue data structure refer https://doc.rust-lang.org/std/collections/struct.VecDeque.html
         // dfs requires recursion
-        // in both cases keep track of visited nodes using HashSet
-        todo!();
+        // in both cases keep track of visited vertexs using HashSet
+        let mut visited: HashSet<&T> = HashSet::new();
+
+        // Popping in the front is not so efficient in Vec
+
+        let mut queue: VecDeque<&T> = VecDeque::new();
+        queue.push_back(u);
+
+        while let Some(x) = queue.pop_front() {
+            visited.insert(x);
+            if x == v {
+                return true;
+            }
+            if let Some(neighbors) = self.edges.get(x) {
+                for neighbor in neighbors {
+                    // as_ref it takes you from &Rc<T> to &T
+                    // Refer AsRef trait
+                    if !visited.contains(neighbor.as_ref()) {
+                        queue.push_back(&neighbor);
+                    }
+                }
+            }
+        }
+        false
     }
 }
 
@@ -169,4 +233,3 @@ mod tests {
         assert!(graph.contains_vertex(&"C"));
     }
 }
-
